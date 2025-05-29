@@ -1,2 +1,0 @@
-Physical Curve("inner_conductor_boundary") = {1, 2};
-Physical Curve("outer_conductor_boundary") = {3, 4};
