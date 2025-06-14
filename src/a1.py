@@ -1,7 +1,6 @@
 import time
-import gmsh
 import numpy as np
-import meshio
+import meshes 
 import scipy.sparse as ssp
 import scipy.sparse.linalg as ssl
 import matplotlib.pyplot as plt
@@ -11,33 +10,15 @@ from scipy.constants import epsilon_0
 
 Z = 50
 er = 1
-epsilon = epsilon_0 * er
-b = 1.75
+epsilon = er
+b = 0.0175
 a = b*np.exp(-Z*np.sqrt(er)/60)
+refinements = 2
 INNERPOTENTIAL = 1.0
 OUTERPOTENTIAL = 0.0
 
-gmsh.initialize()
-gmsh.model.add("coaxial_cross_section")
+msh = meshes.coaxial_mesh(a, b, refinements=refinements)
 
-inner = gmsh.model.occ.addCircle(0, 0, 0, a, 1) 
-outer = gmsh.model.occ.addCircle(0, 0, 0, b, 2)
-
-inner_loop = gmsh.model.occ.addCurveLoop([1], 3)
-outer_loop = gmsh.model.occ.addCurveLoop([2], 4)
-surface = gmsh.model.occ.addPlaneSurface([4, 3], 5)
-
-gmsh.model.occ.synchronize()
-
-inner_tag = gmsh.model.addPhysicalGroup(1, [1], 6, "inner_boundary")
-outer_tag = gmsh.model.addPhysicalGroup(1, [2], 7, "outer_boundary")
-dielectric_tag = gmsh.model.addPhysicalGroup(2, [5], 8, "dielectric")
-
-gmsh.model.mesh.generate(2)
-gmsh.write("coaxial.msh")
-gmsh.finalize()
-
-msh = meshio.read("coaxial.msh")
 points = msh.points[:, :2]
 edges = msh.cells_dict["line"]
 triangles = msh.cells_dict["triangle"]
@@ -84,7 +65,7 @@ B = np.zeros(Nf)
 for t in triangles: 
     x = [p[0] for p in points[t]]
     y = [p[1] for p in points[t]]
-    mat = np.matrix([[1, x[0], y[0]], 
+    mat = np.array([[1, x[0], y[0]], 
                     [1, x[1], y[1]],
                     [1, x[2], y[2]]])
     De = np.linalg.det(mat)
@@ -113,7 +94,9 @@ X0[unknown] = X
 triang = tri.Triangulation(points[:, 0], points[:, 1], triangles)
 
 plt.figure()
-plt.tricontourf(triang, X0, levels=50, cmap="viridis")
+# plt.tripcolor(triang, X0, cmap='RdBu_r')
+plt.tricontour(triang, X0, colors='black')
+plt.tricontourf(triang, X0, levels=50, cmap='RdBu_r')
 plt.colorbar(label="Potential")
 plt.title("Electrostatic Potential")
 plt.xlabel("x")
