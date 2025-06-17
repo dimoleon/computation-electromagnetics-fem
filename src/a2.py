@@ -95,10 +95,7 @@ for idt, t in enumerate(triangles):
                     B[index[t[i]]] -= Se[i, j]*X0[t[j]]
 
 
-# also try cg or something for iterative solver
 X = np.array(ssl.spsolve(S, B))
-# print(S)
-# X = np.linalg.solve(S, B)
 X0[unknown] = X
 
 triang = tri.Triangulation(points[:, 0], points[:, 1], triangles)
