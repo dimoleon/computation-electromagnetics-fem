@@ -3,6 +3,7 @@ import meshio
 
 def coaxial_mesh(a, b, refinements=0, model_name=f'coaxial_cross_section'): 
     gmsh.initialize() 
+    gmsh.option.setNumber("General.Terminal", 0)
     gmsh.model.add(model_name)
 
     inner = gmsh.model.occ.addCircle(0, 0, 0, a, 1)
@@ -33,6 +34,7 @@ def coaxial_mesh(a, b, refinements=0, model_name=f'coaxial_cross_section'):
 def parallel_plates_mesh(w, t, d, domain_multiplier=5, refinements=0):
     model_name = f'parallel_plates_capacitor'
     gmsh.initialize() 
+    gmsh.option.setNumber("General.Terminal", 0)
     gmsh.model.add(model_name)
 
     # domain defininitions
@@ -77,18 +79,21 @@ def parallel_plates_mesh(w, t, d, domain_multiplier=5, refinements=0):
     lower_plate_loop = gmsh.model.occ.addCurveLoop([ll1, ll2, ll3, ll4])
 
     # dielectric rectangle
-    dl1 = ll3
-    dl2 = gmsh.model.occ.addLine(lp4, up1)
-    dl3 = ul1
-    dl4 = gmsh.model.occ.addLine(up2, lp3)
+    # dl1 = ll3
+    # dl2 = gmsh.model.occ.addLine(lp4, up1)
+    # dl3 = ul1
+    # dl4 = gmsh.model.occ.addLine(up2, lp3)
     
-    dielectric_loop = gmsh.model.occ.addCurveLoop([dl1, dl2, dl3, dl4])
+    # dielectric_loop = gmsh.model.occ.addCurveLoop([dl1, dl2, dl3, dl4])
 
-    # surfaces 
-    dielectric_surface = gmsh.model.occ.addPlaneSurface([dielectric_loop])
+    # # surfaces 
+    # dielectric_surface = gmsh.model.occ.addPlaneSurface([dielectric_loop])
+    # air_surface = gmsh.model.occ.addPlaneSurface([domain_loop,
+    #                                               upper_plate_loop, lower_plate_loop,
+    #                                               dielectric_loop])
     air_surface = gmsh.model.occ.addPlaneSurface([domain_loop,
-                                                  upper_plate_loop, lower_plate_loop,
-                                                  dielectric_loop])
+                                                  upper_plate_loop, 
+                                                  lower_plate_loop])
     
     gmsh.model.occ.synchronize()
 
@@ -97,7 +102,7 @@ def parallel_plates_mesh(w, t, d, domain_multiplier=5, refinements=0):
     gmsh.model.addPhysicalGroup(1, [ll1, ll2, ll3, ll4], 3, "lower_plate")
 
     gmsh.model.addPhysicalGroup(2, [air_surface], 4, "air_surface")
-    gmsh.model.addPhysicalGroup(2, [dielectric_surface], 5, "dielectric_surface")
+    # gmsh.model.addPhysicalGroup(2, [dielectric_surface], 5, "dielectric_surface")
     
     gmsh.model.mesh.generate(2)
 
@@ -114,6 +119,7 @@ def parallel_plates_mesh(w, t, d, domain_multiplier=5, refinements=0):
 
 def circular_waveguide_mesh(a, refinements=0, model_name='circular_waveguide'): 
     gmsh.initialize() 
+    gmsh.option.setNumber("General.Terminal", 0)
     gmsh.model.add(model_name)
 
     boundary = gmsh.model.occ.addCircle(0, 0, 0, a, 1)
