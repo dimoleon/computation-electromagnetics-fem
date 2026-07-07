@@ -1,0 +1,359 @@
+\documentclass[12pt]{article}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{fontspec}
+% \usepackage[left=1.06cm,top=0.9cm,right=1.06cm,bottom=0.49cm]{geometry}
+% \setmainfont{GFS Didot}
+\setmainfont{EB Garamond}
+
+
+% Set page size and margins
+\usepackage[a4paper,top=2cm,bottom=1.5cm,left=1cm,right=1cm]{geometry}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setlength{\parindent}{0pt}
+
+% Useful packages
+\usepackage{minted}
+\usepackage{graphicx}
+\graphicspath{{./media/}}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{siunitx}
+\usepackage{bm}
+% \usepackage{sectsty}
+% \sectionfont{\fontsize{12}{15}\selectfont}
+
+\title{\vspace{-2cm}060 - Υπολογιστικός Ηλεκτρομαγνητισμός \\
+        \large Εργασία FEM}
+
+\author{Ιωάννης Δημουλιός \\ 10641}
+\date{Εαρινό εξάμηνο 2025}
+
+\lhead{060 - Υπολογιστικός Ηλεκτρομαγνητισμός}
+\chead{Εργασία FEM}
+\rhead{Ιωάννης Δημουλιός}
+\begin{document}
+\maketitle
+
+Καταλήξαμε να χρησιμοποιήσουμε Python με αρκετά ικανοποιητικά αποτελέσματα. Για τον σχηματισμό του πλέγματος χρησιμοποίησαμε το Gmsh και το API του για την Python. Στην αρχή είχαμε προσπαθήσει και σε Julia μαζί με Gmsh, αλλά η τεκμηρίωση ήταν δυστυχώς ανεπαρκής. 
+
+Το πλεονέκτημα του Gmsh συγκριτικά με τη Matlab στο πλαίσιο της εργασίας τουλάχιστον έγγειται στο γεγονός ότι από το πλέγμα ήδη μπορείς να ορίσεις συνοριακές κορυφές και ακμές και να τις εισάγεις μετά στην Python δίχως επιπλέον προεπεξεργασία. Ως εκ τούτου τα σχετικά βήματα της εργασίας παρελήφθησαν. Αυτό βέβαια αντισταθμίζεται από τον χρόνο που χρειάστηκε για να μάθουμε πώς λειτουργούν σωστά τα παρόντα εργαλεία. 
+
+\section*{Πρόβλημα A}
+\subsection*{A.1 Ομοαξονικό καλώδιο με διηλεκτρικό τον αέρα}
+Χρησιμοποιώντας την εξίσωση 
+\[
+    Z_0 = \dfrac{60}{\sqrt{\varepsilon_r}}\ln(b/a)
+\]
+για τη σύνθετη αντίσταση ομοαξονικού καλωδίου προκύπτει ότι \(a = \SI{0.76}{\cm} \). 
+
+Ακολουθούμε πάνω κάτω τις οδηγίες και λαμβάνουμε τα εξής διαγράμματα για 2 refinements. 
+\begin{center}
+    \includegraphics[width=0.7\textwidth]{media/a1_r2_potential.png}
+\end{center}
+\begin{center}
+    \includegraphics[width=0.7\textwidth]{media/a1_r2_field.png}
+\end{center}
+
+Όλα τα ζητούμενα νούμερα εκτυπώνονται με την εκτέλεση του αρχείου \texttt{a1.py}. 
+
+Με περισσότερα refinements τα αποτελέσματα κερδίζουν σε ακρίβεια, αλλά απαιτούν μεγαλύτερο χρόνο εκτέλεσης. 
+Ως μέθοδο επαναληπτικής επίλυσης χρησιμοποιήσαμε την biconjugate gradient. Ο χρόνος που απαιτείται για την επίλυση του γραμμικού αραιού συστήματος είναι σαφώς μεγαλύτερος συγκριτικά με ευθεία λύση. 
+
+Η ενέργεια του πεδίου που αποθηκεύεται στην επιφάνεια κάθε στοιχείου μπορεί να υπολογιστεί ως εξής: 
+\begin{align*}
+    W_{\text{elem}} &= \dfrac{1}{2}\iint_\text{elem}\nabla\phi\cdot\varepsilon\nabla\phi\, ds \\
+    &= \dfrac{1}{2}\sum_{i=1}^3\sum_{j=1}^3\phi_i S_{ij}\phi_j \\
+    &= \dfrac{1}{2}\phi_{\text{elem}}^T S_\text{elem}\phi_\text{elem}.
+\end{align*}
+Έπειτα αθροίζουμε την ενέργεια όλων των στοιχείων για να λάβουμε τη συνολική. Με \(S_\text{elem}\) συμβολίζουμε τον τοπικό πίνακα ακαμψίας του κάθε τριγώνου και με \(\phi_\text{elem}\) το διάνυσμα του δυναμικού που έχουμε υπολογίσει και αντιστοιχεί στις 3 κορυφές του κάθε τριγώνου. 
+Έτσι, προκύπτουν για το αντίστοιχο πλήθος refinements: 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a1_r0_stats.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a1_r1_stats.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a1_r2_stats.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a1_r3_stats.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a1_r4_stats.png}
+\end{figure}
+
+Σημειώνουμε ότι η χωρητικότητα ανά μονάδα μήκους ομοαξονικού καλωδίου υπολογίζεται ως 
+\[
+    C = \dfrac{2\pi\varepsilon}{\ln(b/a)}.
+\]
+
+Φυσικά το σχετικό σφάλμα μειώνεται με την αύξηση των refinements, αλλά αυξάνεται ο χρόνος επίλυσης. Βέβαια ακόμη και χωρίς refinements το σφάλμα είναι σχεδόν αμελητέο. 
+
+Στην Python δεν υπήρχε συνάρτηση ισοδύναμη της \texttt{pdegrad}, οπότε χρειάστηκε να αυτοσχεδιάσουμε λιγάκι. 
+\newpage
+\subsection*{A.2 Πυκνωτής παράλληλων πλακών πεπερασμένου πλάτους}
+Για 2 refinements. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/a2_r2_potential.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/a2_r2_field.png}
+\end{figure}
+
+Σημειώνουμε ότι το πεδίο εντός του χωρίου που ορίζουν οι δύο πλάκες είναι ομογενές και ίσο με 
+\[
+E = \dfrac{V}{d}
+\]
+και η χωρητικότητα του πυκνωτή ανά μονάδα μήκους είναι 
+\[
+C = \dfrac{\varepsilon w}{d} = \dfrac{\varepsilon_0 \varepsilon_r w}{d}
+\]
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/a2_rx_stats.png}
+\end{figure}
+
+Διαπιστώνουμε ότι το σφάλμα αν και σε κάθε περίπτωση σχεδόν αμελητέο αυξάνεται όσο αυξάνονται τα refinements. Αυτό μπορεί να συβαίνει για τον εξής λόγο. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{a2_mesh.png}
+\end{figure}
+Όπως φαίνεται στην εικόνα του πλέγματος, ο αλγόριθμος τριγωνιοποίησης τρολάρει ελαφρώς και χωρίζει αυστηρά τα τρίγωνα που εντάσσονται εντός της περιοχής που ορίζουν οι δύο πυκνωτές από εκείνα εκτός αυτής. Επομένως, έτσι εξαλείφονται ανακρίβειες στα λιγότερα refinements λόγω περισσότερης ή λιγότερης επιφανείας. Αντίθετα στα περισσότερα refinements υπολογίζεται το εμβαδό όλο και μικρότερων τριγώνων και δεδομένου ότι η επίλυση του προβλήματος περιλαμβάνει διαιρέσεις με αυτά τα εμβαδά μπορεί να προκύπτουν μικρές αριθμητικές αστάθειες. \\
+
+Στο μέγεθός του domain τώρα. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/a2_rx_domain_multiplier.png}
+\end{figure}
+Όσο μεγαλώνει η έκταση του πλέγματος η ακρίβεια μικραίνει, ειδικά στο χωρίο μεταξύ των πυκνωτών. Έτσι, τα τρίγωνα στο χωρίο αυτό έχουν μεγαλύτερο εμβαδό και οι προαναφερθείσες αστάθειες μειώνονται. 
+
+\newpage
+\section*{Πρόβλημα Β}
+\subsection*{Β.1 Κυματοδηγός κυκλικής διατομής}
+Πάλι ακολουθούμε μεθοδικά τα βήματα. 
+Στη λύση του γενικευμένου προβλήματος ιδιοτιμών, ωστόσο, για τους ρυθμούς που δεν έχουν κυκλική συμμετρία στο διάγραμμά τους προκύπτουν διπλές ιδιοτιμές με ορθογώνια ιδιοδιανύσματα. Φυσικά οι ιδιοτιμές αυτές δεν είναι ακριβώς ίσες με το ταίρι τους, αλλά η διαφορά τους είναι πολύ μικρή. Τα διαγράμματα, λοιπόν, που προκύπτουν από μια τέτοια ιδιοτιμή και το ζευγάρι της είναι τα ίδια υπό περιστροφή \(90^{\circ}\). 
+
+Σημειώνουμε επίσης ότι στην επίλυση του προβλήματος για τους ρυθμούς ΤΕ προκύπτει ως ιδιοτιμή που αντιστοιχεί στον σταθερό ρυθμό το \(0\). Αυτό είναι λογικό, αφού αν θέσουμε \(H_z = c\) σταθερή στην εξίσωση
+\[
+    (\nabla_t^2 + k_c^2)H_z = 0
+\]
+προκύπτει ότι \(k_c =0\), ενώ μάλιστα οι ικανοποιούνται και συνθήκες Neumann \(\dfrac{\partial H_z}{\partial n} = 0\).
+Το \(0 \) είναι τετριμμένη ιδιοτιμή λοιπόν και απορρίπτεται. 
+
+Έχουμε και λέμε τώρα για ρυθμούς ΤΕ. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te1.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te2.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te3.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te4.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te5.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_te6.png}
+\end{figure}
+
+Και για ρυθμούς ΤΜ. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm1.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm2.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm3.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm4.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm5.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_tm6.png}
+\end{figure}
+Στους ρυθμούς ΤΕ οι ισοσταθμικές γραμμές του \(H_z\) συμπίπτουν με τις δυναμικές γραμμές τους ηλεκτρικού πεδίου (περιστρέφοντας κατάλληλα το εκάστοτε διάγραμμα). 
+Στους ρυθμούς ΤΜ οι ισοσταθμικές γραμμές του \(E_z\) συμπίπτουν με τις δυναμικές γραμμές τους μαγνητικού πεδίου (περιστρέφοντας κατάλληλα το εκάστοτε διάγραμμα). 
+
+
+Αυτό συμβαίνει, για παράδειγμα στην περίπτωση των TE, διότι από τις 
+\[
+E_x = -\dfrac{j\omega\mu}{k_c^2}\dfrac{\partial H_z}{\partial y}, \quad 
+E_y = \dfrac{j\omega\mu}{k_c^2}\dfrac{\partial H_z}{\partial x}
+\]
+προκύπτει ότι 
+\begin{align*}
+    E_t &= -\dfrac{j\omega\mu}{k_c^2}\left(\dfrac{\partial H_z}{\partial y} \hat{x}-\dfrac{\partial H_z}{\partial x}\hat{y}\right) \\
+    &= -\dfrac{j\omega\mu}{k_c^2}(\nabla_tH_z \times \hat{z}).
+\end{align*}
+
+Τα διανύσματα που μας ενδιαφέρουν ανήκουν εξ ολοκλήρου στο εγκάρσιο επίπεδο. Οι δυναμικές γραμμές του \( \nabla_t H_z\) είναι κάθετες στις ισοσταθμικές του \(H_z\) και οι δυναμικές του \(E_t\) είναι κάθετες στις δυναμικές του \(\nabla_t H_z \). Επομένως οι δυναμικές του \(E_t \) συμπίπτουν με τις ισοσταθμικές του \(H_z\) στο εγκάρσιο επίπεδο. 
+
+Η απόδειξη για τους ρυθμούς ΤΜ είναι πανομοιότυπη.
+\newpage
+
+Στις συχνότητες αποκοπής τώρα. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_cutoffs_r01.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{media/b1_cutoffs_r23.png}
+\end{figure}
+
+Και συγκεντρωτικά τα σχετικά σφάλματα.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{media/b1_relerrs.png}
+\end{figure}
+Για λίγα refinements το προαναφερθέν φίλτρο για τις διπλές ιδιοτιμές εμφανώς δεν λειτουργει επαρκώς καλά. Η απόκλιση των διπλών ιδιοτιμών είναι επαρκώς μεγάλη για να λογίζονται ως διαφορετικές στον κώδικα με αποτέλεσμα να εμφανίζονται τεράστιες διαφορές από τις πραγματικές ιδιοτιμές.
+
+Όσο αυξάνονται τα refinements το φαινόμενο μειώνεται, αλλά συνεχίζει να εμφανίζεται σε ρυθμούς υψηλών τάξεων. 
+
+Για 3 refinements στους πρώτους 6 ρυθμούς τόσο ΤΕ όσο και ΤΜ η αστάθεια αυτή απουσιάζει εντελώς. 
+
+\newpage
+\subsection*{Β.2 Σκέδαση από άπειρο κυκλικό τέλεια αγώγιμο κύλινδρο}
+Η μόνη παρατήρηση που έχουμε είναι για τον πίνακα \(A_e\). 
+Εμπνεόμενοι από τις σημειώσεις, για απορροφητική οριακή συνθήκη πρώτης τάξης γράφουμε τη διατύπωση Galerkin
+\[
+    \iint_{\Omega}\nabla E_z' \cdot \mu^{-1} \nabla E_z \,ds - \omega^2\iint_\Omega E_z' \varepsilon E_z \,ds - a(R) \oint_C \mu^{-1} E_z' E_z \,dl = 0 .
+\]
+Επομένως, αν \(k = \omega\sqrt{\mu\varepsilon}\), προκύπτει ότι σε ομογενές μέσο
+\[
+    \iint_{\Omega}\nabla E_z' \cdot \nabla E_z \,ds - k^2\iint_\Omega E_z' E_z \,ds - a(R) \oint_C E_z' E_z \,dl = 0 .
+\]
+Έτσι, η διατύπωση του προβλήματος με πίνακες γίνεται
+\[
+    (S_{ff} - k^2 T_{ff} - aT^c_{ff})E_f^s = -(S_{fp} - k^2T_{fp}) E_p^s.
+\]
+(Θέλουμε να πιστεύουμε ότι έχει χαθεί ένα πρόσημο στις διαφάνειες, δεδομένης της συνθήκης Dirichlet. Ειδάλλως, λούσαμε!) 
+
+O τοπικός πίνακας μάζας για τις ακμές του συνόρου ακτίνας \(R\) υπολογίζεται 
+\[
+T^c_e = \dfrac{\ell_e}{6}\begin{bmatrix}2 & 1 \\
+                                  1 & 2\end{bmatrix}.
+\]
+
+Δεν αλλάζει κάτι στη συνάθροιση έπειτα, επί της ουσίας. 
+Επομένως, θεωρούμε ότι 
+\[
+    A_e = S_e - k^2 T_e. 
+\] 
+
+Στα διάγραμματα τώρα.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_00.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_01.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_02.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_10.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_11.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_12.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_20.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_21.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/b2_22.png}
+\end{figure}
+Δεν έχουμε και πολλά να σχολιάσουμε. Για την ακρίβεια δεν ξέρουμε αν είναι καν σωστά. 
+
+Για σταθερό ακτίνα κυλίνδρου \(a\) φαίνεται τα διαγράμματα με μικρότερη ακτίνα συνόρου \(R \) να είναι ακριβές αντίγραφο του εσωτερικού των διαγραμμάτων με μεγαλύτερη ακτίνα που σημαίνει ότι η απορροφητική συνθήκη πρέπει να λειτουργεί σωστά. Στην επιφάνεια του κυλίνδρου, επίσης, το συνολικό πεδίο είναι \(0\) που σημαίνει ότι η μη ομογενής συνθήκη Dirichlet έχει εφαρμοστεί σωστά. \\
+
+Αυτά για σήμερα! \\ 
+Au revoir. À bientôt. 
+
+Σημείωση 2026 \\
+Τα παραπάνω διαγράμματα αναπαριστούν το πραγματικό μέρος του πεδίου, δηλαδή την τιμή του για $t=0$. Τα αντίστοιχα διαγράμματα για το μέτρο του πεδίου είναι τα εξής. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/025_075.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/025_125.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/025_225.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/100_150.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/100_200.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/100_300.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/250_300.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/250_350.png}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{media/250_450.png}
+\end{figure}
+\end{document}
+
+

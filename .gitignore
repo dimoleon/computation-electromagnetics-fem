@@ -1,4 +1,17 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
 src/__pycache__
 *.msh
+.DS_Store
+*.png
+*.jpg
+*.zip
+*media/
+*.fdb_latexmk
+*.aux
+*.fls
+*.out
+*.synctex.gz
+*.log
+*pycache*
+
 

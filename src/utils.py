@@ -3,40 +3,46 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from matplotlib.colors import TwoSlopeNorm
 
-def local_stiffness_mass_grad_area(points, n1, n2, n3): 
+
+def local_stiffness_mass_grad_area(points, n1, n2, n3):
     t = [n1, n2, n3]
     x = points[t][:, 0]
     y = points[t][:, 1]
 
-    mat = np.array([[1, x[0], y[0]], 
-                    [1, x[1], y[1]],
-                    [1, x[2], y[2]]])
+    mat = np.array([[1, x[0], y[0]], [1, x[1], y[1]], [1, x[2], y[2]]])
     De = np.linalg.det(mat)
-    area = abs(De/2)
+    area = abs(De / 2)
 
-    b_grad = np.array([y[1]-y[2], y[2]-y[0], y[0]-y[1]])/De
-    c_grad = np.array([x[2]-x[1], x[0]-x[2], x[1]-x[0]])/De
+    b_grad = np.array([y[1] - y[2], y[2] - y[0], y[0] - y[1]]) / De
+    c_grad = np.array([x[2] - x[1], x[0] - x[2], x[1] - x[0]]) / De
     grad = np.vstack((b_grad, c_grad))
 
-    Se = np.zeros((3,3))
-    for i in range(3): 
-        for j in range(3): 
-            Se[i, j] = (b_grad[i]*b_grad[j] + c_grad[i]*c_grad[j])*area
-    
-    Te = (area/12) * np.array([[2, 1, 1],
-                               [1, 2, 1],
-                               [1, 1, 2]])
+    Se = np.zeros((3, 3))
+    for i in range(3):
+        for j in range(3):
+            Se[i, j] = (b_grad[i] * b_grad[j] + c_grad[i] * c_grad[j]) * area
+
+    Te = (area / 12) * np.array([[2, 1, 1], [1, 2, 1], [1, 1, 2]])
 
     return Se, Te, grad, area
 
-def plot_scalar(points, triangles, X0, title='Potential', color_title='Potential (V)', equilines=True): 
+
+def plot_scalar(
+    points,
+    triangles,
+    X0,
+    title="Potential",
+    color_title="Potential (V)",
+    equilines=True,
+):
     triang = tri.Triangulation(points[:, 0], points[:, 1], triangles)
 
-    norm = TwoSlopeNorm(vcenter=0)
+    # norm = TwoSlopeNorm(vcenter=0)
     plt.figure()
     if equilines:
-        plt.tricontour(triang, X0, colors='black')
-    plt.tricontourf(triang, X0, norm=norm, levels=50, cmap='jet')
+        plt.tricontour(triang, X0, colors="black")
+    # plt.tricontourf(triang, X0, norm=norm, levels=50, cmap='jet')
+    plt.tricontourf(triang, X0, levels=50, cmap="jet")
     plt.colorbar(label=color_title)
     plt.title(title)
     plt.xlabel("x")
@@ -45,27 +51,38 @@ def plot_scalar(points, triangles, X0, title='Potential', color_title='Potential
     plt.tight_layout()
     plt.show()
 
-def calc_field_from_potential(potential, grad, triangles): 
+
+def calc_field_from_potential(potential, grad, triangles):
     num_points = len(potential)
 
-    E_per_element = np.array([-grad[idt] @ potential[tri] for idt, tri in enumerate(triangles)])
+    E_per_element = np.array(
+        [-grad[idt] @ potential[tri] for idt, tri in enumerate(triangles)]
+    )
 
     E_at_nodes = np.zeros((num_points, 2))
-    count = np.zeros(num_points) 
+    count = np.zeros(num_points)
 
-    for tri, E in zip(triangles, E_per_element): 
+    for tri, E in zip(triangles, E_per_element):
         E_at_nodes[tri] += E
-        count[tri] += 1 
+        count[tri] += 1
 
-    for i in range(num_points): 
+    for i in range(num_points):
         E_at_nodes[i] /= count[i]
 
     return E_per_element, E_at_nodes
 
-def plot_field(E_points, points, scale=5e2, title="Field Magnitude", color_title="Electric Field (V/m)", step=1):
+
+def plot_field(
+    E_points,
+    points,
+    scale=5e2,
+    title="Field Magnitude",
+    color_title="Electric Field (V/m)",
+    step=1,
+):
     num_points = len(E_points)
     magnitude = np.zeros(num_points)
-    for i in range(num_points): 
+    for i in range(num_points):
         magnitude[i] = np.linalg.norm(E_points[i])
         E_points[i] /= magnitude[i]
 
@@ -73,9 +90,18 @@ def plot_field(E_points, points, scale=5e2, title="Field Magnitude", color_title
     E_points_sub = E_points[::step]
     magnitude_sub = magnitude[::step]
     plt.figure()
-    plt.quiver(points_sub[:, 0], points_sub[:, 1], E_points_sub[:, 0], E_points_sub[:, 1], 
-            magnitude_sub, scale=scale,
-            angles='xy', scale_units='xy', pivot='tail', cmap='plasma')
+    plt.quiver(
+        points_sub[:, 0],
+        points_sub[:, 1],
+        E_points_sub[:, 0],
+        E_points_sub[:, 1],
+        magnitude_sub,
+        scale=scale,
+        angles="xy",
+        scale_units="xy",
+        pivot="tail",
+        cmap="plasma",
+    )
     plt.title(title)
     plt.xlabel("x")
     plt.ylabel("y")
@@ -84,11 +110,13 @@ def plot_field(E_points, points, scale=5e2, title="Field Magnitude", color_title
     plt.tight_layout()
     plt.show()
 
-def calc_energy(E_elem, areas, epsilon): 
+
+def calc_energy(E_elem, areas, epsilon):
     magnitude_on_elements = np.linalg.norm(E_elem, axis=1)
-    We = 0.5*epsilon*np.sum(magnitude_on_elements**2 * areas)
+    We = 0.5 * epsilon * np.sum(magnitude_on_elements**2 * areas)
 
     return We
 
-def calc_relative_error(val_theor, val_calc): 
-    return 100*abs(val_theor - val_calc)/val_theor
+
+def calc_relative_error(val_theor, val_calc):
+    return 100 * abs(val_theor - val_calc) / val_theor
